@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anvil"
+version = "1.0.0"
+description = "A production-grade CLI toolkit built entirely on the standard library's argparse."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "anvil" }]
+keywords = ["argparse", "cli", "command-line", "ux", "stdlib"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# Zero runtime dependencies, on purpose: everything is built from argparse and
+# the standard library. That constraint is the entire point of this project.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+anvil = "anvil.__main__:entry"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF", "ARG", "PTH"]
+ignore = [
+    "E501",    # long lines are fine; the tables and examples are aligned on purpose
+    "RUF012",  # mutable class attrs need ClassVar; noisy for Action subclasses
+    "SIM108",  # an explicit if/else is clearer than a ternary in several places
+    "SIM105",  # contextlib.suppress is slower and less explicit here
+    "ARG001",  # handler signatures are a fixed protocol: every handler takes ctx
+    "ARG002",  # Action.__call__ signatures are dictated by argparse
+    "ARG005",  # Magic methods cannot rename their arguments
+    "PTH123",  # open() is used where the path is a pathlib object
+    "PTH118",  # os.path.join is clearer for building CLI-visible paths
+    "B008",    # argparse calls are function calls, not defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Handlers all take (ctx, args) whether or not they use ctx; that uniformity is
+# what makes the command table a plain data structure.
+"src/anvil/commands/*.py" = ["ARG001"]
+"tests/*.py" = ["ARG001", "ARG002", "SLF001"]
